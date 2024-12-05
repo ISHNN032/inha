@@ -1,0 +1,42 @@
+<div class="my-5">
+    <h1 class="text-center mb-5"><%=title%></h1>
+    <div id="div_list"div_list></div>
+    <script id="temp_list" type="x-handlebars-template">
+        <table class="table">
+            {{#each .}}
+                <tr>
+                    <td><img src="{{thumbnail}}" width="50px"></td>
+                    <td>{{title}}<br>{{price}}원<br>{{authors}}<br>{{publisher}}<br>{{isbn}}</td>
+                    <td><button class="btn btn-danger btn-sm delete" isbn="{{isbn}}">삭제</button></td>
+                </tr>
+            {{/each}}
+        </table>
+    </script>
+</div>
+
+<script type="module">
+    import { app } from "/javascripts/config.js";
+    import { getDatabase, onValue, ref, remove } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-database.js";
+
+    const db = getDatabase(app);
+
+    $("#div_list").on("click", ".delete", function() {
+        const isbn = $(this).attr("isbn");
+        if (confirm('삭제하시겠습니까?')) {
+            remove(ref(db, `/cart/${uid}/${isbn}`));
+        }
+    });
+
+    onValue(ref(db, `/cart/${uid}`), (snapshot) => {
+        let rows = [];
+        snapshot.forEach(row=>{
+            rows.push({key: row.key, ...row.val()});
+            const source = $('#temp_list').html();
+            const template = Handlebars.compile(source);
+            const html = template(rows);
+            $('#div_list').html(html);
+        })
+        console.log('rows:', rows);
+    });
+
+</script>

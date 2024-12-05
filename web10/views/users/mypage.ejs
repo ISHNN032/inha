@@ -1,0 +1,81 @@
+<style>
+    .title {
+        width: 200px;
+    }
+</style>
+<div class="row mt-5 justify-content-center">
+    <div class="col-md-8 m-3">
+        <h1 class="text-center"><%=title%></h1>
+        <form name="frm">
+            <div class="input-group mb-3">
+                <div class="title input-group-text justify-content-center">이메일</div>
+                <input name="email" class="form-control" readonly>
+            </div>
+            <div class="input-group mb-3">
+                <div class="title input-group-text justify-content-center">성명</div>
+                <input name="name" class="form-control">
+            </div>
+            <div class="input-group mb-3">
+                <div class="title input-group-text justify-content-center">전화</div>
+                <input name="phone" class="form-control">
+            </div>
+            <div class="input-group mb-1">
+                <div class="title input-group-text justify-content-center">주소</div>
+                <input name="address1" class="form-control">
+                <button name="search" type="button" class="btn btn-primary">검색</button>
+            </div>
+            <input name="address2" class="form-control" placeholder="상세주소">
+            <div class="text-center mt-3">
+                <button type="submit" class="btn btn-primary">정보저장</button>
+                <button type="reset" class="btn btn-secondary">저장취소</button>
+            </div>
+        </form>
+    </div>
+</div>
+<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+<script type="module">
+    import { app } from "/javascripts/config.js";
+    import { getDatabase, onValue, ref, set } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-database.js";
+
+    const db = getDatabase(app);
+
+    $(frm.email).val(email);
+
+    $(frm).on("submit", async function (e) {
+        e.preventDefault();
+        const name = $(frm.name).val();
+        const phone = $(frm.phone).val();
+        const address1 = $(frm.address1).val();
+        const address2 = $(frm.address2).val();
+        await set(ref(db, `/users/${uid}`), { email, name, phone, address1, address2 });
+        alert('정보가 저장되었습니다.');
+    });
+
+    $(frm.search).on("click", function () {
+        console.log('search');
+        new daum.Postcode({
+            oncomplete: function (data) {
+                const address = data.buildingName ? `${data.roadAddress} (${data.buildingName})` : data.roadAddress;
+                $(frm.address1).val(address);
+            }
+        }).open();
+    });
+
+    $(frm.reset).on("click", function () {
+        e.preventDefault();
+        if (confirm('정말로 초기화하시겠습니까?')) {
+            location.reload();
+        }
+    });
+
+    onValue(ref(db, `/users/${uid}`), (snapshot) => {
+        const user = snapshot.val();
+        if (user) {
+            $(frm.name).val(user.name);
+            $(frm.phone).val(user.phone);
+            $(frm.address1).val(user.address1);
+            $(frm.address2).val(user.address2);
+        }
+    });
+    
+</script>

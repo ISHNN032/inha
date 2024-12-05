@@ -25,7 +25,7 @@
                 <td>{{price}}</td>
                 <td><div class="ellipsis">{{authors}}</div></td>
                 <td width="60"><%-include("modal_book.ejs")%></td>
-                <td width="60"><button class="btn btn-primary btn-sm cart" book="{{strBook @this}}">카트</button></td>
+                <td width="60"><button class="btn btn-success btn-sm cart" book="{{strBook @this}}">카트</button></td>
             </tr>    
             {{/each}}
         </table>
@@ -94,30 +94,29 @@
             location.href="/users/login";
         }
     });
-
-    //도서목록 함수
+    
     function getList(){
+        let query=$(frm.query).val();
         $.ajax({
-            type:"get",
-            url:"https://dapi.kakao.com/v3/search/book?target=title",
-            data: {query:query, size:size, page:page},
-            headers:{
-                "Authorization": "KakaoAK 7dc21d5852274d162cc3c15163505083"
-            },
-            success:function(data){
-                console.log(data);
-                const temp=Handlebars.compile($("#temp_list").html());
-                $("#div_list").html(temp(data));
-
-                const last = Math.ceil(data.meta.pageable_count/size);
-                $("#page").html(page + "/" + last);
-
-                if(page==1) $("#prev").attr("disabled", true)
-                else $("#prev").attr("disabled", false)
+          type:"get",
+          url:`https://dapi.kakao.com/v3/search/book?target=title&size=${size}&query=${query}&page=${page}`,
+          headers:{"Authorization": "KakaoAK 54b6688221dead45827042df7e297c2d"},
+          success:function(data){
+            //console.log(data);
+            const temp=Handlebars.compile($("#temp_list").html());
+            $("#div_list").html(temp(data));
+    
             
-                if(data.meta.is_end) $("#next").attr("disabled", true)
-                else $("#next").attr("disabled", false)
-            }
+            $("#total").html(data.meta.pageable_count);
+            const last = Math.ceil(data.meta.pageable_count/size);
+            $("#page").html(`${page}/${last}`);
+            if(page==1) $("#prev").attr("disabled", true);
+            else $("#prev").attr("disabled", false);
+    
+            const is_end = data.meta.is_end;
+            if(is_end) $("#next").attr("disabled", true);
+            else $("#next").attr("disabled", false);
+          }
         });
-    }
+      }
 </script>

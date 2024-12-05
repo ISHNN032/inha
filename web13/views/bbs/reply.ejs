@@ -1,0 +1,124 @@
+<div class="my-5">
+    <h1 class="text-center">댓글관리</h1>
+    <form name="frm">
+        <textarea name="contents" rows="5" , class="form-control" placeholder="내용을 입력하세요."></textarea>
+        <div class="text-end mt-2">
+            <button class="btn btn-primary px-5">등록</button>
+        </div>
+    </form>
+    <div id="div_reply" class="my-5"></div>
+</div>
+<script id="temp_reply", type="x-handlelers-templaste">
+    {{#each .}}
+        <div class="top1">
+            <div class="view{{id}}">
+                <div style="font-size:12px;color:gray;">{{email}} | {{date}}</div>
+                <div class="ellipsis contents" style="cursor:pointer;white-space:pre-wrap">{{contents}}</div>
+                <div class="text-end" style="{{funHide email}}">
+                    <button class="btn btn-outline-success btn-sm btn-update" id="{{id}}">수정</button>
+                    <button class="btn btn-outline-danger btn-sm btn-delete" id="{{id}}">삭제</button>
+                </div>
+            </div>
+            <div class="edit{{id}}" style="display:none">
+                <textarea class="form-control text-contents" row=5>{{contents}}</textarea>
+                <div class="text-end mt-2" style="{{funHide email}}">
+                    <button class="btn btn-outline-primary btn-sm btn-save" id="{{id}}">저장</button>
+                    <button class="btn btn-outline-secondary btn-sm btn-cancel" id="{{id}}">취소</button>
+            </div>
+        </div>
+        <hr>
+    {{/each}}
+</script>
+<script>
+    Handlebars.registerHelper("funHide", function (writer) {
+        if (email != writer)  {
+            return "display:none";
+        }
+    });
+</script>
+<script type="module">
+    import { app } from '/javascripts/config.js'
+    import { getFirestore, collection, addDoc, deleteDoc, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+    import { onSnapshot, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+    const db = getFirestore(app);
+    const bid = "<%=id%>";
+
+    const q = query(collection(db, "replies"), where("bid", "==", bid), orderBy("date"));
+
+    onSnapshot(q, (querySnapshot) => {
+        const rows = []
+        querySnapshot.forEach(row => {
+            rows.push({ id:row.id, ...row.data() });
+        })
+        const html = Handlebars.compile($("#temp_reply").html())(rows);
+        $("#div_reply").html(html);
+    });
+
+    $("#div_reply").on("click", ".contents", function () {
+        $(this).toggleClass("ellipsis");
+    });
+
+    $("#div_reply").on("click", ".btn-delete", function() {
+        const id = $(this).attr("id");
+        console.log(id);
+        if (confirm("삭제하시겠습니까?")) {
+            deleteDoc(doc(db, `replies/${id}`));
+        }
+    });
+
+    $("#div_reply").on("click", ".btn-update", async function() {
+        const id = $(this).attr("id");
+        $(".view" + id).hide();
+        $(".edit" + id).show();
+
+        $(".btn-save").attr("disabled", true);
+    });
+
+    $("#div_reply").on("keyup", ".text-contents", async function() {
+        $(".btn-save").attr("disabled", false);
+    });
+
+    $("#div_reply").on("click", ".btn-cancel", function() {
+        const id = $(this).attr("id");
+
+        getDoc(doc(db, `replies/${id}`)).then((snapshot) => {
+            const row = snapshot.data();
+            $(`.edit${id} textarea`).val(row.contents);
+        });
+
+        $(".view" + id).show();
+        $(".edit" + id).hide();
+    });
+
+    $("#div_reply").on("click", ".btn-save", function() {
+        const id = $(this).attr("id");
+        const contents = $(`.edit${id} textarea`).val();
+        updateDoc(doc(db, `replies/${id}`), { contents });
+        $(".view" + id).show();
+        $(".edit" + id).hide();
+    });
+
+    $(frm).on("submit", async function (event) {
+        event.preventDefault();
+
+        console.log(email);
+        const contents = $(frm.contents).val();
+
+        if (email == null) {
+            console.log("로그인이 필요합니다.");
+            sessionStorage.setItem("target", window.location.href);
+            location.href = "/users/login";
+        } else {
+            if (contents == "") {
+                alert("내용을 입력하세요.");
+                $(frm.contents).focus();
+            } else {
+                const date = moment(new Date()).format("YYYY-MM-DD HH:mm:ss");
+                const reply = { bid, email, date, contents };
+                console.log(reply);
+                addDoc(collection(db, "replies"), reply);
+                $(frm.contents).val("");
+            }
+        }
+    })
+</script>

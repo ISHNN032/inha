@@ -1,0 +1,54 @@
+<div class="row justify-content-center my-5">
+    <h1 class="text-center mb-5">
+        <%=title%>
+    </h1>
+    <div class="col-md-10">
+        <form name="frm">
+            <input name="title" class="form-control mb-2" placeholder="제목을 입력하세요.">
+            <textarea name="contents" class="form-control" rows="10" placeholder="내용을 입력하세요."></textarea>
+            <div class="text-center mt-3">
+                <button class="btn btn-primary px-5">수정</button>
+                <button type="reset" class="btn btn-secondary px-5">취소</button>
+            </div>
+        </form>
+    </div>
+</div>
+<script type="module">
+    import { app } from '/javascripts/config.js'
+    import { getFirestore, collection, addDoc, getDoc, setDoc, doc } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+    const db = getFirestore(app);
+
+    const id = "<%=id%>";
+
+    const snapshot = await getDoc(doc(db, `bbs/${id}`));
+
+    if (snapshot.exists()) {
+        const row = snapshot.data();
+        $(frm.title).val(row.title);
+        $(frm.contents).val(row.contents);
+    }
+
+    $(frm).on("submit", async function (e) {
+        e.preventDefault();
+        const row = snapshot.data();
+
+        if (email != row.email) {
+            alert("작성자만 수정할 수 있습니다.");
+            return;
+        }
+
+        const title = $(frm.title).val();
+        const contents = $(frm.contents).val();
+        if (title == "") {
+            alert("제목을 입력하세요!");
+            $(frm.title).focus();
+        } else {
+            //게시글 등록
+            const date = moment(new Date()).format("YYYY-MM-DD HH:mm:ss");
+            // await addDoc(collection(db, "bbs"), {email, date, title, contents});
+            await setDoc(doc(db, `bbs/${id}`), { email, date, title, contents });
+            alert("게시글 수정완료!");
+            location.href = `/bbs/${id}`;
+        }
+    });
+</script>

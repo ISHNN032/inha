@@ -1,0 +1,54 @@
+<div class="my-5 row justify-content-center">
+    <h1 class="text-center"><%=title%></h1>
+    <div class="col-10">
+        <div class="text-end mb-2 buttons" style="display: none;">
+            <button class="btn btn-success btn-sm update">수정</button>
+            <button class="btn btn-danger btn-sm delete">삭제</button>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <h5 id="title"></h5>
+                <hr>
+                <h5 id="content" style="white-space: pre-wrap;"></h5>
+            </div>
+            <div class="card-footer">
+                Posted by <span id="email">이메일</span> on <span id="date">언제</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import {app} from '/javascripts/config.js'
+    import {getFirestore, doc, getDoc, deleteDoc }  from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+    const db = getFirestore(app);
+
+    const id = "<%=id%>";
+
+    const snapshot = await getDoc(doc(db, `bbs/${id}`));
+    
+    if (snapshot.exists()) {
+        const row = snapshot.data();
+        $("#title").html(row.title);
+        $("#content").html(row.contents);
+        $("#email").html(row.email);
+        $("#date").html(row.date);
+
+        console.log(row.email);
+
+        if(email == row.email) $(".buttons").show();
+    }
+
+    $(".delete").on("click", async function(){
+        if(confirm("정말로 삭제하시겠습니까?")) {
+            await deleteDoc(doc(db, `bbs/${id}`));
+            location.href = "/bbs";
+        }
+    })
+
+    $(".update").on("click", function(){
+        location.href = `/bbs/update/${id}`;
+    })
+
+</script>
